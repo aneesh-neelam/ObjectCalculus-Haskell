@@ -22,18 +22,18 @@ type Object = Map.Map Label Method
 
 --Zeta Calculus
 data ZetaCalculus = Name Label
-    | Object
+    | Obj Object
     | MI Object Label
     | MU Object Label Method
-    | Method
+    | Met Method
 
 --Object Scoping
 fv::ZetaCalculus -> (Set.Set Label)
-fv (Zeta y b) = Set.delete y (fv b)
+fv (Met (Zeta y b)) = Set.delete y (fv b)
 fv (Name x) = Set.singleton x
-fv mapObject = Map.fold (\x acc -> Set.union (fv x) acc) Set.empty mapObject
-fv (MI a l) = fv a
-fv (MU a l m) = Set.union (fv a) (fv m)
+fv (Obj o) = Map.fold (\x acc -> Set.union (fv (Met x)) acc) Set.empty o
+fv (MI a l) = fv (Obj a)
+fv (MU a l m) = Set.union (fv (Obj a)) (fv (Met m))
 
 -- Generates a name that does not appear in the given list.
 -- This utility function is useful for defining substitution ("subs" below).
@@ -48,21 +48,25 @@ fresh set = f 0 where
             x
 
 --Object substitution
-subs::ZetaCalculus->Label->Label->ZetaCalculus
-subs (Zeta y b) x c = Zeta y' (subs (subs b y y') x c)
-    where y' = fresh (Set.union (Set.union (fv (Zeta y b)) (fv c)) (Set.singleton x))
+subs::ZetaCalculus->Label->ZetaCalculus->ZetaCalculus
+subs (Met (Zeta y b)) x c = Met (Zeta y' (subs (subs b y (Name y')) x c))
+    where y' = fresh (Set.union (Set.union (fv (Met (Zeta y b))) (fv (Name c))) (Set.singleton x))
 subs (Name y) x c
     | y /= x = Name y
-    | y == x = Name c
-subs obj x c = Map.map (\x -> subs x) obj
-subs (MI a l) x c = MI (subs a x c) l
-subs (MU a l m) x c = MU (subs a  x c) l (subs m x c)
+    | y == x = c
+subs (Obj obj) x c = Obj (Map.map (\y -> let q = (subs (Met y) x c) in case q of (Met m)->m) obj)
+subs (MI a l) x c = case (subs (Obj a) x c) of
+    (Obj tmp) -> MI tmp l
+
+subs (MU a l m) x c = MU a1 l m1
+    where (Obj a1) = (subs (Obj a) x c)
+          (Met m1) = (subs (Met m) x c)
 
 --Primitive Semantics
 reduce:: ZetaCalculus -> ZetaCalculus
 reduce (MI o l) = let res = (Map.lookup l o) in case res of
     Just (Zeta xj bj) -> subs bj xj o
-reduce (MU o l m) = Map.adjust (\x -> m) l o
+reduce (MU o l m) = Obj (Map.adjust (\x -> m) l o)
 
 --movable points
 --One dimensional object
