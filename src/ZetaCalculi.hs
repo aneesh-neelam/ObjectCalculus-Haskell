@@ -48,12 +48,12 @@ fresh set = f 0 where
             x
 
 --Object substitution
-subs::ZetaCalculus->Label->ZetaCalculus->ZetaCalculus
-subs (Met (Zeta y b)) x c = Met (Zeta y' (subs (subs b y (Name y')) x c))
+subs::ZetaCalculus->Label->Label->ZetaCalculus
+subs (Met (Zeta y b)) x c = Met (Zeta y' (subs (subs b y y') x c))
     where y' = fresh (Set.union (Set.union (fv (Met (Zeta y b))) (fv (Name c))) (Set.singleton x))
 subs (Name y) x c
     | y /= x = Name y
-    | y == x = c
+    | y == x = Name c
 subs (Obj obj) x c = Obj (Map.map (\y -> let q = (subs (Met y) x c) in case q of (Met m)->m) obj)
 subs (MI a l) x c = case (subs (Obj a) x c) of
     (Obj tmp) -> MI tmp l
