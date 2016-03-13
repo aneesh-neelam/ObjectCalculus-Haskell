@@ -11,7 +11,7 @@ type Parameter = String
 type Name = String
 data Method = Zeta Parameter Body
 data Attribute = Method | Double
-data Object = Map.empty
+type Object = Map.Map Name Attribute
 
 --Primitive Semantics
 
@@ -25,8 +25,9 @@ update obj methodName = newObj
 
 --Object Scoping
 FV Zeta y b = Set.delete y (FV b)
+--x is string
 FV x = Set.singleton x
-FV mapObject =
+FV mapObject = Map.fold (\x acc -> Set.union (FV x) acc) Set.empty mapObject
 
 
 
