@@ -1,9 +1,10 @@
 -- Import QuickCheck and Map
 import Test.QuickCheck
+import Data.Map (Map)
 import qualified Data.Map as Map
 
 -- Object is a map between labels and methods
-type Object = (Map.Map String Method)
+type Object = (Map String Method)
 
 -- Function: Method Body: Similar to Lambda Calculus
 data Body =
@@ -16,6 +17,7 @@ data Body =
 data Method =
     VarM Int
   | Fun Body
+  | FunM (Maybe Body)
   deriving (Show, Eq)
 
 -- Object Calculus Syntax: Untyped Imperative
@@ -67,18 +69,23 @@ methodInvocation :: Object -> String -> Object
 methodInvocation obj label = resultantObj where
   m = (lookup label obj)
   m' = evalMethod m
-  resultantObj = Map.update m' label obj
+  f m2 = if (m2 == m') then Just m' else Nothing
+  resultantObj = Map.update f label obj
 
 -- Evaluate a Method
-evalMethod :: Method -> Maybe Method
+evalMethod :: Method -> Method
 evalMethod (VarM number) = VarM number
-evalMethod (Fun body) = Fun (evalBody body)
+evalMethod (Fun body) = FunM (evalBody body)
 
 -- Update Method with new Method
 methodUpdate :: Object -> String -> Method -> Object
-methodUpdate obj label m' = resultantObj where
-  resultantObj = Map.update m' label obj
+methodUpdate obj label m = resultantObj where
+  f m' = if (m' == m) then Just m else Nothing
+  resultantObj = Map.update f label obj
 
+-- Clone an object
+objClone :: Object -> Object
+objClone obj = obj
 
 -- Test Method Invocation
 testMethodInvocation :: IO()
