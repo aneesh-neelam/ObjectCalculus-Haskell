@@ -1,4 +1,4 @@
-.idea
+# Haskell
 dist
 cabal-dev
 *.o
@@ -15,7 +15,12 @@ cabal.sandbox.config
 *.aux
 *.hp
 .stack-work/
-.DS_Store
+
+# LATEX
+*.aux
 *.log
-*.gz
-src
+*.synctex.gz
+
+# OS
+.DS_Store
+*~
